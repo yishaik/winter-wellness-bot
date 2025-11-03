@@ -57,8 +57,8 @@ Legend:
 - [ ] Optional Dockerfile for non-Pi environments — Agent (optional)
 
 ## Testing & QA
-- [ ] Add minimal test harness (pytest) for key helpers — Agent
-- [ ] CI config (lint/tests) — Agent
+- [x] Add minimal test harness (pytest) for key helpers — Agent
+- [x] CI config (lint/tests) — Agent
 - [ ] Manual E2E test on target Pi — Human
 
 ---
