@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.mypy_cache/
+
+# Environments
+.env
+.env.*
+.venv/
+
+# Editors/OS
+.DS_Store
+.vscode/
+
+# App data/logs
+bot.log
+*.log
+data/
+winter_wellness_bot/webui/__pycache__/
+
+# Archives
+*.zip

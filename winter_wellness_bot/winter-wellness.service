@@ -1,0 +1,14 @@
+[Unit]
+Description=Winter Wellness Telegram Bot
+After=network-online.target
+
+[Service]
+Type=simple
+User=wellness
+WorkingDirectory=/opt/winter_wellness_bot
+EnvironmentFile=/opt/winter_wellness_bot/.env
+ExecStart=/opt/winter_wellness_bot/.venv/bin/python /opt/winter_wellness_bot/main.py
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

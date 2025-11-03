@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Winter Wellness — Admin</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 24px; color: #222; }
+      h1 { font-size: 20px; margin: 0 0 12px; }
+      h2 { font-size: 16px; margin: 24px 0 8px; }
+      .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+      label { display: block; font-size: 12px; color: #555; margin-top: 10px; }
+      input[type=text] { width: 100%; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+      .btn { display: inline-block; padding: 8px 12px; border-radius: 4px; text-decoration: none; border: 1px solid #999; background: #f5f5f5; color: #222; cursor: pointer; }
+      .btn.primary { background: #0b5; color: #fff; border-color: #0a4; }
+      .btn.danger { background: #e33; color: #fff; border-color: #c11; }
+      .row { display: flex; gap: 8px; align-items: center; }
+      .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+      pre { background: #f7f7f7; padding: 12px; border-radius: 4px; overflow: auto; max-height: 420px; }
+      .flash { padding: 8px 10px; border-radius: 4px; margin-bottom: 12px; }
+      .flash.success { background: #e7f7ee; color: #145c2f; border: 1px solid #bfe8cd; }
+      .flash.error { background: #fdeceb; color: #7b1c1c; border: 1px solid #f5c2c2; }
+      small.mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: #666; }
+    </style>
+  </head>
+  <body>
+    <h1>Winter Wellness — Admin</h1>
+    <div><small class="mono">Managing {{ managed_dir }} · Service: {{ service_name }}</small></div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash {{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="grid">
+      <div>
+        <h2>Configuration (.env)</h2>
+        <form action="{{ url_for('update') }}" method="post">
+          <label>TELEGRAM_BOT_TOKEN
+            <input type="text" name="TELEGRAM_BOT_TOKEN" value="{{ env.TELEGRAM_BOT_TOKEN }}" autocomplete="off">
+          </label>
+          <label>TELEGRAM_CHAT_ID
+            <input type="text" name="TELEGRAM_CHAT_ID" value="{{ env.TELEGRAM_CHAT_ID }}">
+          </label>
+          <label>TZ
+            <input type="text" name="TZ" value="{{ env.TZ }}">
+          </label>
+          <div class="row">
+            <label style="flex:1">LAT
+              <input type="text" name="LAT" value="{{ env.LAT }}">
+            </label>
+            <label style="flex:1">LON
+              <input type="text" name="LON" value="{{ env.LON }}">
+            </label>
+          </div>
+          <label>SAUNA_SQLITE_PATH
+            <input type="text" name="SAUNA_SQLITE_PATH" value="{{ env.SAUNA_SQLITE_PATH }}">
+          </label>
+          <label>SAUNA_BASE_URL
+            <input type="text" name="SAUNA_BASE_URL" value="{{ env.SAUNA_BASE_URL }}">
+          </label>
+          <div class="row">
+            <label style="flex:1">SAUNA_TEMP_THRESHOLD_C
+              <input type="text" name="SAUNA_TEMP_THRESHOLD_C" value="{{ env.SAUNA_TEMP_THRESHOLD_C }}">
+            </label>
+            <label style="flex:1">SAUNA_MIN_DURATION_MIN
+              <input type="text" name="SAUNA_MIN_DURATION_MIN" value="{{ env.SAUNA_MIN_DURATION_MIN }}">
+            </label>
+          </div>
+          <div class="row">
+            <label style="flex:1">MORNING_TIME (HH:MM)
+              <input type="text" name="MORNING_TIME" value="{{ env.MORNING_TIME }}">
+            </label>
+            <label style="flex:1">EVENING_TIME (HH:MM)
+              <input type="text" name="EVENING_TIME" value="{{ env.EVENING_TIME }}">
+            </label>
+          </div>
+          <div class="row">
+            <label style="flex:1">DISABLE_MORNING (0/1)
+              <input type="text" name="DISABLE_MORNING" value="{{ env.DISABLE_MORNING }}">
+            </label>
+            <label style="flex:1">DISABLE_EVENING (0/1)
+              <input type="text" name="DISABLE_EVENING" value="{{ env.DISABLE_EVENING }}">
+            </label>
+          </div>
+          <label>DATA_DIR
+            <input type="text" name="DATA_DIR" value="{{ env.DATA_DIR }}">
+          </label>
+          <div class="row">
+            <label style="flex:1">LOG_LEVEL
+              <input type="text" name="LOG_LEVEL" value="{{ env.LOG_LEVEL }}">
+            </label>
+            <label style="flex:1">LOG_TO_FILE (0/1)
+              <input type="text" name="LOG_TO_FILE" value="{{ env.LOG_TO_FILE }}">
+            </label>
+          </div>
+          <label>MOOD_LOG_MAX_BYTES
+            <input type="text" name="MOOD_LOG_MAX_BYTES" value="{{ env.MOOD_LOG_MAX_BYTES }}">
+          </label>
+          <div style="margin-top:12px" class="row">
+            <button class="btn primary" type="submit">Save</button>
+          </div>
+        </form>
+      </div>
+      <div>
+        <h2>Service</h2>
+        <div class="row" style="margin-bottom:8px">
+          <form action="{{ url_for('control_service') }}" method="post" class="row">
+            <input type="hidden" name="action" value="start">
+            <button class="btn" type="submit">Start</button>
+          </form>
+          <form action="{{ url_for('control_service') }}" method="post" class="row">
+            <input type="hidden" name="action" value="stop">
+            <button class="btn danger" type="submit">Stop</button>
+          </form>
+          <form action="{{ url_for('control_service') }}" method="post" class="row">
+            <input type="hidden" name="action" value="restart">
+            <button class="btn" type="submit">Restart</button>
+          </form>
+          <form action="{{ url_for('control_service') }}" method="post" class="row">
+            <input type="hidden" name="action" value="reload">
+            <button class="btn" type="submit">Reload</button>
+          </form>
+          <form action="{{ url_for('control_service') }}" method="post" class="row">
+            <input type="hidden" name="action" value="enable">
+            <button class="btn" type="submit">Enable</button>
+          </form>
+          <form action="{{ url_for('control_service') }}" method="post" class="row">
+            <input type="hidden" name="action" value="disable">
+            <button class="btn" type="submit">Disable</button>
+          </form>
+        </div>
+        <div class="cards">
+          <div>
+            <h3>systemctl</h3>
+            <pre>{{ status.status }}</pre>
+          </div>
+          <div>
+            <h3>journal (recent)</h3>
+            <pre>{{ status.journal }}</pre>
+          </div>
+        </div>
+        <h3 style="margin-top:18px">bot.log (fallback)</h3>
+        <pre>{{ status.bot_log }}</pre>
+      </div>
+    </div>
+  </body>
+  </html>
+
