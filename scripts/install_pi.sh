@@ -6,8 +6,9 @@ set -euo pipefail
 # - Prompts for configuration and writes /opt/winter_wellness_bot/.env
 # - Installs systemd unit and starts the service
 
-REPO_DIR="$(cd "$(dirname "$0")/.." && pwd)"
+REPO_DIR="$(cd "$(dirname "$0")/.." 2>/dev/null || pwd)"
 SRC_DIR="$REPO_DIR/winter_wellness_bot"
+GITHUB_REPO="https://github.com/yishaik/winter-wellness-bot.git"
 TARGET_DIR="/opt/winter_wellness_bot"
 DATA_DIR_DEFAULT="/var/lib/winter_wellness_bot"
 SERVICE_NAME="winter-wellness.service"
@@ -51,11 +52,15 @@ create_user_and_dirs() {
 
 install_prereqs() {
   apt-get update -y
-  apt-get install -y python3-venv python3-pip
+  apt-get install -y python3-venv python3-pip git rsync curl ca-certificates tar
 }
 
 copy_app() {
-  rsync -a --delete "$SRC_DIR/" "$TARGET_DIR/"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete "$SRC_DIR/" "$TARGET_DIR/"
+  else
+    cp -a "$SRC_DIR/." "$TARGET_DIR/"
+  fi
   chown -R "$USER_NAME":"$USER_NAME" "$TARGET_DIR"
 }
 
@@ -90,6 +95,7 @@ LOG_TO_FILE=${LOG_TO_FILE}
 MOOD_LOG_MAX_BYTES=${MOOD_LOG_MAX_BYTES}
 EOF
   chown "$USER_NAME":"$USER_NAME" "$env_path"
+  chmod 600 "$env_path" || true
 }
 
 install_service() {
@@ -125,6 +131,23 @@ main() {
 
   install_prereqs
   create_user_and_dirs
+
+  # Detect source: if running from the repo tree, use it; otherwise clone from GitHub
+  if [[ ! -f "$SRC_DIR/main.py" ]]; then
+    echo "Source tree not found locally; cloning from $GITHUB_REPO"
+    TMP_SRC="$(mktemp -d)"
+    if command -v git >/dev/null 2>&1; then
+      git clone --depth 1 "$GITHUB_REPO" "$TMP_SRC/repo"
+      SRC_DIR="$TMP_SRC/repo/winter_wellness_bot"
+    else
+      TARBALL_URL="https://github.com/yishaik/winter-wellness-bot/archive/refs/heads/main.tar.gz"
+      curl -fsSL "$TARBALL_URL" -o "$TMP_SRC/src.tar.gz"
+      mkdir -p "$TMP_SRC/extracted"
+      tar -xzf "$TMP_SRC/src.tar.gz" -C "$TMP_SRC/extracted"
+      SRC_DIR="$(echo "$TMP_SRC"/extracted/winter-wellness-bot-*/winter_wellness_bot)"
+    fi
+  fi
+
   copy_app
   setup_venv
 
@@ -171,4 +194,3 @@ main() {
 }
 
 main "$@"
-

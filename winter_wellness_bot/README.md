@@ -12,7 +12,7 @@
 יש שתי אפשרויות: התקנה אוטומטית עם סקריפט, או התקנה ידנית.
 
 ### א) התקנה אוטומטית (מומלץ)
-הרץ כ־root (או `sudo`) במחשב היעד:
+הרץ כ־root (או `sudo`) במחשב היעד. הסקריפט מוריד את הקוד אם לא קיים ליד הסקריפט:
 ```bash
 curl -fsSL -o install_pi.sh https://raw.githubusercontent.com/yishaik/winter-wellness-bot/main/scripts/install_pi.sh
 sudo bash install_pi.sh
@@ -24,7 +24,7 @@ sudo scripts/install_pi.sh
 ```
 הסקריפט:
 - יוצר משתמש `wellness` ושתי תיקיות `/opt/winter_wellness_bot` ו־`/var/lib/winter_wellness_bot`
-- מעתיק את הקוד, מתקין venv ותלויות
+- מעתיק את הקוד (מהספרייה המקומית או מוריד מה-GitHub), מתקין venv ותלויות
 - שואל אותך על משתני הסביבה וכותב קובץ `.env`
 - יוצר ומפעיל שירות `systemd` בשם `winter-wellness.service`
 
