@@ -75,8 +75,16 @@ python webui/app.py
 # ניתן להתאים תיקייה ושם שירות דרך משתני סביבה:
 # MANAGED_DIR=/opt/winter_wellness_bot SERVICE_NAME=winter-wellness.service PORT=8080 python webui/app.py
 ```
-הערות:
-- כדי שהכפתורים יעבדו (systemctl), יש להריץ את ה־WebUI עם הרשאות מתאימות (root) או להגדיר כללי sudo/polkit המאפשרים שליטה בשירות.
+הערות והרשאות:
+- שינוי `.env` ופקודות `systemctl` דורשים הרשאות. מומלץ להריץ את ה־WebUI כ־root בעת ניהול, או:
+  - להוסיף את המשתמש המפעיל לקבוצת `wellness` ולהעניק הרשאות קבוצה ל־`/opt/winter_wellness_bot`:
+    ```bash
+    sudo usermod -aG wellness $USER
+    sudo chgrp -R wellness /opt/winter_wellness_bot
+    sudo chmod -R g+rwX /opt/winter_wellness_bot
+    # התנתק/התחבר כדי שהקבוצה תופעל
+    ```
+- אם אין הרשאה ל־journalctl, התצוגה תציין את שגיאת ההרצה. ניתן להשתמש בלוג קובץ (`LOG_TO_FILE=1`) ולקרוא מ־`DATA_DIR/bot.log`.
 - ה־WebUI נועד לרוץ ברשת פרטית מאובטחת (ללא אימות). במידת הצורך אפשר להוסיף אימות בסיסי ב־reverse proxy או להרחיב את הקוד.
 
 ## הפעלה כ־systemd Service
@@ -126,6 +134,11 @@ sudo systemctl status winter-wellness.service
 ## הערות הפעלה
 - הקוד יוצר את הספרייה ב־`DATA_DIR` (ברירת מחדל: `.`) אם אינה קיימת, עבור לוגים/מצב.
 - אם `TELEGRAM_CHAT_ID` לא הוגדר וגם לא בוצע `/start`, שליחה מתוזמנת תידחה עם הודעת אזהרה בלוג.
+
+## פתרון תקלות (Troubleshooting)
+- הבוט לא עולה: בדוק `systemctl status winter-wellness.service` ו־`journalctl -u winter-wellness.service -n 200 --no-pager`. ודא שהוגדר `TELEGRAM_BOT_TOKEN`.
+- אין לוגים: קבע `LOG_TO_FILE=1` וודא `DATA_DIR` נגיש. בדוק `bot.log` בתיקייה.
+- WebUI לא מצליח לשמור `.env`: הרץ כ־root או הוסף הרשאות לקבוצת `wellness` (ראה לעיל).
 
 ## משתני סביבה נוספים
 - `LOG_LEVEL` — רמת לוג (ברירת מחדל `INFO`; אפשר `DEBUG`/`WARNING`/`ERROR`).

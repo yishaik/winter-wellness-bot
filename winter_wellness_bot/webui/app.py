@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os
 import subprocess
+import pwd
+import grp
+import stat
 from typing import Dict, Tuple
 
 from flask import Flask, render_template, request, redirect, url_for, flash
@@ -82,7 +85,13 @@ def write_env(values: Dict[str, str]) -> None:
     os.makedirs(MANAGED_DIR, exist_ok=True)
     with open(tmp_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines) + "\n")
+    # Attempt atomic replace
     os.replace(tmp_path, ENV_FILE)
+    try:
+        # Keep file reasonably private but group-writable for admin group
+        os.chmod(ENV_FILE, 0o660)
+    except Exception:
+        pass
 
 
 def run_cmd(cmd: list) -> Tuple[int, str]:
@@ -110,11 +119,11 @@ def service_status() -> Dict[str, str]:
     code, out = run_cmd(["systemctl", "status", SERVICE_NAME, "--no-pager", "--lines", "15"])
     st["status"] = out.strip()
     # Try journalctl for recent logs
-    code, out = run_cmd(["journalctl", "-u", SERVICE_NAME, "-n", "100", "--no-pager", "--output", "short"])
+    code, out = run_cmd(["journalctl", "-u", SERVICE_NAME, "-n", "200", "--no-pager", "--output", "short"])
     if code == 0:
         st["journal"] = out
     else:
-        st["journal"] = "(journalctl unavailable or permission denied)"
+        st["journal"] = f"(journalctl failed, code={code})\n{out}"
     # Fallback to bot.log if enabled
     env = read_env()
     data_dir = env.get("DATA_DIR", MANAGED_DIR)
@@ -129,6 +138,26 @@ def service_status() -> Dict[str, str]:
     else:
         st["bot_log"] = "(no bot.log found)"
     return st
+
+
+def path_perm_info(path: str) -> Dict[str, str]:
+    info: Dict[str, str] = {"exists": str(os.path.exists(path))}
+    try:
+        st = os.stat(path)
+        info["mode"] = oct(st.st_mode & 0o777)
+        try:
+            info["owner"] = pwd.getpwuid(st.st_uid).pw_name
+        except Exception:
+            info["owner"] = str(st.st_uid)
+        try:
+            info["group"] = grp.getgrgid(st.st_gid).gr_name
+        except Exception:
+            info["group"] = str(st.st_gid)
+        info["writable"] = str(os.access(path, os.W_OK))
+        info["readable"] = str(os.access(path, os.R_OK))
+    except FileNotFoundError:
+        info.update({"mode": "-", "owner": "-", "group": "-", "writable": "False", "readable": "False"})
+    return info
 
 
 @app.route("/", methods=["GET"])
@@ -155,7 +184,18 @@ def index():
         "MOOD_LOG_MAX_BYTES": env.get("MOOD_LOG_MAX_BYTES", "0"),
     }
     st = service_status()
-    return render_template("index.html", env=defaults, status=st, managed_dir=MANAGED_DIR, service_name=SERVICE_NAME)
+    perm = path_perm_info(ENV_FILE)
+    current_user = pwd.getpwuid(os.geteuid()).pw_name
+    return render_template(
+        "index.html",
+        env=defaults,
+        status=st,
+        managed_dir=MANAGED_DIR,
+        service_name=SERVICE_NAME,
+        env_file=ENV_FILE,
+        env_perm=perm,
+        current_user=current_user,
+    )
 
 
 @app.route("/update", methods=["POST"])
@@ -186,6 +226,16 @@ def update():
     try:
         write_env(values)
         flash("Configuration saved to .env", "success")
+    except PermissionError as e:
+        who = pwd.getpwuid(os.geteuid()).pw_name
+        flash(
+            (
+                f"Permission denied writing {ENV_FILE}. Run WebUI as root, or adjust permissions. "
+                f"Current user: {who}. Suggested: chgrp wellness {ENV_FILE} && chmod 660 {ENV_FILE} "
+                f"or run: chgrp -R wellness {MANAGED_DIR} && chmod -R g+rwX {MANAGED_DIR} && usermod -aG wellness {who}"
+            ),
+            "error",
+        )
     except Exception as e:
         flash(f"Failed saving .env: {e}", "error")
     return redirect(url_for("index"))
@@ -219,4 +269,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

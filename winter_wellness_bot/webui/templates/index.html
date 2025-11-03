@@ -38,6 +38,9 @@
     <div class="grid">
       <div>
         <h2>Configuration (.env)</h2>
+        <div style="margin-bottom:8px">
+          <small class="mono">File: {{ env_file }} · Writable: {{ env_perm.writable }} · Mode: {{ env_perm.mode }} · Owner: {{ env_perm.owner }}:{{ env_perm.group }} · User: {{ current_user }}</small>
+        </div>
         <form action="{{ url_for('update') }}" method="post">
           <label>TELEGRAM_BOT_TOKEN
             <input type="text" name="TELEGRAM_BOT_TOKEN" value="{{ env.TELEGRAM_BOT_TOKEN }}" autocomplete="off">
@@ -149,4 +152,3 @@
     </div>
   </body>
   </html>
-

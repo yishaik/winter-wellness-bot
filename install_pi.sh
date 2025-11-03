@@ -48,9 +48,6 @@ create_user_and_dirs() {
   id "$USER_NAME" >/dev/null 2>&1 || useradd -r -s /usr/sbin/nologin "$USER_NAME"
   mkdir -p "$TARGET_DIR" "$DATA_DIR_DEFAULT"
   chown -R "$USER_NAME":"$USER_NAME" "$TARGET_DIR" "$DATA_DIR_DEFAULT"
-  # Make group-writable and setgid so new files inherit the group
-  chmod -R g+rwX "$TARGET_DIR" "$DATA_DIR_DEFAULT" || true
-  find "$TARGET_DIR" "$DATA_DIR_DEFAULT" -type d -exec chmod g+s {} + 2>/dev/null || true
 }
 
 install_prereqs() {
@@ -99,7 +96,6 @@ MOOD_LOG_MAX_BYTES=${MOOD_LOG_MAX_BYTES}
 EOF
   chown "$USER_NAME":"$USER_NAME" "$env_path"
   chmod 600 "$env_path" || true
-  chmod g+rw "$env_path" || true
 }
 
 install_service() {
