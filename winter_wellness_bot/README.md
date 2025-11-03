@@ -1,5 +1,7 @@
 # Winter Wellness Telegram Bot (Raspberry Pi)
 
+[![CI](https://github.com/yishaik/winter-wellness-bot/actions/workflows/ci.yml/badge.svg)](https://github.com/yishaik/winter-wellness-bot/actions/workflows/ci.yml)
+
 בוט טלגרם שמסייע להתמודדות עם דכדוך חורף:
 - תזכורות יומיות בשעה **09:00** ו-**21:00** (אזור זמן Asia/Jerusalem)
 - תחזית מזג אוויר (Open-Meteo, ללא צורך ב־API key)
@@ -12,7 +14,7 @@
 ### א) התקנה אוטומטית (מומלץ)
 הרץ כ־root (או `sudo`) במחשב היעד:
 ```bash
-curl -fsSL -o install_pi.sh https://raw.githubusercontent.com/REPO/PLACEHOLDER/main/scripts/install_pi.sh
+curl -fsSL -o install_pi.sh https://raw.githubusercontent.com/yishaik/winter-wellness-bot/main/scripts/install_pi.sh
 sudo bash install_pi.sh
 ```
 או מתוך הספרייה של הפרויקט שכבר הועתקה ל־Pi:
